@@ -31,7 +31,7 @@
     h1{ margin:0 0 6px; font-size:34px; letter-spacing:.2px; }
     .subtitle{ margin:0; color:var(--muted); font-size:15px; }
 
-    .grid{ margin-top:18px; display:grid; grid-template-columns:1.45fr .9fr; gap:18px; }
+    .grid{ margin-top:18px; display:grid; grid-template-columns:1.45fr .9fr; gap:18px; align-items:start; }
     @media (max-width:980px){ .grid{ grid-template-columns:1fr; } }
 
     .card{
@@ -119,11 +119,9 @@
       font-weight:600;
     }
     .btn:hover{ border-color: rgba(140,170,255,.33); }
-    .btn:disabled{
-      cursor:not-allowed;
-      opacity:.55;
-    }
+    .btn:disabled{ cursor:not-allowed; opacity:.55; }
 
+    /* Leaderboard */
     .lb-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
     .lb-head h2{ margin:0; font-size:20px; }
     .small-pill{
@@ -135,7 +133,6 @@
       font-size:13px;
       white-space:nowrap;
     }
-    .lb-desc{ margin: 6px 0 14px; color: var(--muted); font-size:13px; line-height:1.35; }
 
     table{ width:100%; border-collapse: collapse; overflow:hidden; border-radius: 14px; }
     th, td{
@@ -145,7 +142,7 @@
       font-size:14px;
     }
     th{ color:var(--muted); font-weight:600; }
-    .note{ margin-top:10px; color: var(--muted); font-size:13px; line-height:1.35; }
+
     .toast{ margin-top:10px; font-size:13px; color:var(--muted); min-height:18px; line-height:1.35; }
     .toast strong{ color: var(--text); }
   </style>
@@ -188,21 +185,14 @@
         </div>
       </section>
 
-      <!-- Leaderboard (disabled unless you implement a backend GET) -->
-      <aside class="card">
+      <!-- Leaderboard (only shown if a GET endpoint is configured) -->
+      <aside class="card" id="lbCard" style="display:none;">
         <div class="card-inner">
           <div class="lb-head">
             <h2>Leaderboard</h2>
-            <div class="small-pill">Top scorers (overall)</div>
+            <div class="small-pill">Top scorers</div>
           </div>
 
-          <p class="lb-desc">
-            Showing overall top scorers requires a backend “read” endpoint (GitHub Pages is static).
-          </p>
-
-          <button class="btn" id="btnCSV" type="button" disabled>Download Leaderboard as CSV</button>
-
-          <div style="height:10px"></div>
           <table>
             <thead>
               <tr>
@@ -212,19 +202,8 @@
                 <th>Time(s)</th>
               </tr>
             </thead>
-            <tbody id="lbBody">
-              <tr>
-                <td colspan="4" style="color:var(--muted); padding:12px 8px;">
-                  Leaderboard is disabled (no shared data source configured).
-                </td>
-              </tr>
-            </tbody>
+            <tbody id="lbBody"></tbody>
           </table>
-
-          <div class="note">
-            If you want a real leaderboard, create a second Power Automate endpoint that returns the
-            top rows as JSON (GET), then this page can fetch and display them.
-          </div>
         </div>
       </aside>
     </div>
@@ -232,12 +211,15 @@
 
 <script>
 (() => {
-  // Power Automate HTTP trigger URL (POST)
-  // IMPORTANT: this URL contains a signature (sig=...). Anyone can reuse it if they can view your page source.
-  const POWER_AUTOMATE_URL =
+  // POST endpoint (your existing Power Automate flow)
+  // IMPORTANT: this URL contains a signature (sig=...). Do not publish it publicly unless approved.
+  const POWER_AUTOMATE_POST_URL =
     "https://default5e60f7a7d4104d38b87593ca12adc3.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/899b9a3c914541c0af2719bf77613032/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=orFxomxolOpdOCpoEiZ4V-xVhRuhx8oNCAcIWGHFjCs";
 
-  // Quiz questions
+  // GET leaderboard endpoint (must be a separate Power Automate flow that returns JSON)
+  // Leave as "" to hide the leaderboard entirely.
+  const LEADERBOARD_GET_URL = ""; // <-- paste your GET endpoint URL here
+
   const QUIZ = [
     {
       text: "What is the REAL meaning of: “Let’s circle back later”",
@@ -271,7 +253,6 @@
     }
   ];
 
-  // ISO week id like 2026-W01
   function getISOWeekId(d) {
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const dayNum = date.getUTCDay() || 7;
@@ -287,28 +268,13 @@
     }[m]));
   }
 
-  // ---- One submission only (per browser + per week) ----
-  // NOTE: On a static site you cannot reliably enforce “one submission per person overall”
-  // without authentication or a backend. This prevents repeat submissions from the same browser.
+  // One submission only (per browser + per week)
+  // True "one submission per user overall" requires authentication/back-end enforcement.
   function submissionKeyForThisWeek() {
     return `weeklyQuizSubmitted_${getISOWeekId(new Date())}`;
   }
-  function hasSubmitted() {
-    return localStorage.getItem(submissionKeyForThisWeek()) === "1";
-  }
-  function markSubmitted() {
-    localStorage.setItem(submissionKeyForThisWeek(), "1");
-  }
-
-  // ---- State ----
-  const secondsPerQuestion = 30;
-  let idx = 0;
-  let correct = 0;
-  let score = 0;
-  let timer = null;
-  let timeLeft = secondsPerQuestion;
-  let totalTimeSpent = 0;
-  let finished = false;
+  function hasSubmitted() { return localStorage.getItem(submissionKeyForThisWeek()) === "1"; }
+  function markSubmitted() { localStorage.setItem(submissionKeyForThisWeek(), "1"); }
 
   // ---- Elements ----
   const elQ = document.getElementById("statQ");
@@ -323,12 +289,26 @@
   const btnSubmit = document.getElementById("btnSubmit");
   const elToast = document.getElementById("toast");
 
+  // Leaderboard elements
+  const lbCard = document.getElementById("lbCard");
+  const lbBody = document.getElementById("lbBody");
+
   function setToast(msg, mode="") {
     elToast.innerHTML = msg ? msg : "";
     if(mode === "good") elToast.style.color = "rgba(34,197,94,.95)";
     else if(mode === "bad") elToast.style.color = "rgba(239,68,68,.95)";
     else elToast.style.color = "var(--muted)";
   }
+
+  // ---- Quiz State ----
+  const secondsPerQuestion = 30;
+  let idx = 0;
+  let correct = 0;
+  let score = 0;
+  let timer = null;
+  let timeLeft = secondsPerQuestion;
+  let totalTimeSpent = 0;
+  let finished = false;
 
   function updateStats() {
     elQ.textContent = `${Math.min(idx+1, QUIZ.length)} / ${QUIZ.length}`;
@@ -350,9 +330,7 @@
         clearInterval(timer);
         lockAnswers();
         setTimeout(nextQuestion, 450);
-      } else {
-        updateStats();
-      }
+      } else updateStats();
     }, 1000);
   }
 
@@ -362,7 +340,6 @@
 
   function renderQuestion() {
     setToast("");
-
     const q = QUIZ[idx];
     elTitle.textContent = q.text;
     elAns.innerHTML = "";
@@ -405,12 +382,8 @@
 
   function nextQuestion() {
     totalTimeSpent += (secondsPerQuestion - timeLeft);
-
     idx += 1;
-    if (idx >= QUIZ.length) {
-      finishQuiz();
-      return;
-    }
+    if (idx >= QUIZ.length) return finishQuiz();
     renderQuestion();
   }
 
@@ -458,7 +431,7 @@
     setToast("Submitting to Power Automate…");
 
     try {
-      const res = await fetch(POWER_AUTOMATE_URL, {
+      const res = await fetch(POWER_AUTOMATE_POST_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -469,15 +442,13 @@
         throw new Error(`HTTP ${res.status} ${res.statusText} ${t}`.slice(0, 300));
       }
 
-      // Mark submitted (prevents re-submit from the same browser this week)
       markSubmitted();
-
-      // Lock the name field too
       elPlayer.disabled = true;
-
       setToast("Submitted successfully. You can’t submit again this week from this browser.", "good");
+
+      // Refresh leaderboard after submit (if enabled)
+      await loadLeaderboard();
     } catch (e) {
-      // Allow retry if it failed
       btnSubmit.disabled = false;
       setToast(
         `Submit failed: <strong>${escapeHtml(e.message)}</strong><br/>
@@ -487,18 +458,64 @@
     }
   }
 
-  // Enable submit once name is typed (after finish)
   elPlayer.addEventListener("input", () => {
     if (finished && !hasSubmitted()) btnSubmit.disabled = !elPlayer.value.trim();
   });
-
   btnSubmit.addEventListener("click", submitResult);
 
+  // ---- Leaderboard (shown only when configured) ----
+  function isLeaderboardEnabled() {
+    return typeof LEADERBOARD_GET_URL === "string" && LEADERBOARD_GET_URL.trim().length > 0;
+  }
+
+  function renderLeaderboard(items) {
+    lbBody.innerHTML = "";
+    if (!items || items.length === 0) {
+      // If enabled but empty, keep it clean: show nothing
+      return;
+    }
+    items.slice(0, 10).forEach(r => {
+      lbBody.insertAdjacentHTML("beforeend", `
+        <tr>
+          <td>${escapeHtml(r.name ?? "")}</td>
+          <td>${escapeHtml(r.score ?? "")}</td>
+          <td>${escapeHtml(r.correct ?? "")}</td>
+          <td>${escapeHtml(r.time ?? "")}</td>
+        </tr>
+      `);
+    });
+  }
+
+  async function loadLeaderboard() {
+    if (!isLeaderboardEnabled()) return;
+
+    try {
+      const res = await fetch(LEADERBOARD_GET_URL, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const data = await res.json();
+
+      // Accept either array or {items:[...]} or {value:[...]}
+      const items = Array.isArray(data) ? data : (data.items || data.value || []);
+      renderLeaderboard(items);
+    } catch (e) {
+      // If it fails, hide leaderboard completely (no placeholders)
+      lbCard.style.display = "none";
+      console.error("Leaderboard load failed:", e);
+    }
+  }
+
   // Init
+  if (isLeaderboardEnabled()) {
+    lbCard.style.display = "";
+    loadLeaderboard();
+  } else {
+    lbCard.style.display = "none"; // remove placeholders entirely
+  }
+
   if (hasSubmitted()) {
-    // Still allow user to take the quiz, but they cannot submit
     setToast("Note: you have already submitted this week from this browser. You may still take the quiz, but cannot submit again.");
   }
+
   renderQuestion();
 })();
 </script>
