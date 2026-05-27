@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Syensqo Weekly Quiz</title>
+  <style>
+    :root{
+      --bg:#070b17;
+      --panel:#0b1227;
+      --panel2:#0b152f;
+      --border:rgba(140,170,255,.18);
+      --text:#e8efff;
+      --muted:#a9b7d6;
+      --accent:#8b5cf6;
+      --accent2:#60a5fa;
+      --good:#22c55e;
+      --bad:#ef4444;
+      --shadow: 0 20px 60px rgba(0,0,0,.55);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 600px at 40% 10%, rgba(96,165,250,.15), transparent 60%),
+        radial-gradient(900px 500px at 80% 40%, rgba(139,92,246,.18), transparent 55%),
+        linear-gradient(180deg, #050816, #060a14 60%, #030510);
+      color:var(--text);
+    }
+    .wrap{
+      max-width: 1120px;
+      margin: 48px auto;
+      padding: 0 18px;
+    }
+    header{ margin-bottom: 18px; }
+    h1{
+      margin:0 0 6px;
+      font-size: 34px;
+      letter-spacing:.2px;
+    }
+    .subtitle{
+      margin:0;
+      color:var(--muted);
+      font-size: 15px;
+    }
+
+    .grid{
+      margin-top: 18px;
+      display:grid;
+      grid-template-columns: 1.45fr .9fr;
+      gap:18px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-inner{ padding:18px; }
+
+    .stats{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom: 12px;
+    }
+    .pill{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+      background: rgba(5,10,25,.35);
+      color:var(--muted);
+      min-width: 160px;
+    }
+    .pill b{ color: var(--text); font-weight:600; }
+    .progress{
+      height:10px;
+      width:100%;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.25);
+      overflow:hidden;
+      margin: 8px 0 18px;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transition: width .2s ease;
+    }
+
+    .q-title{ margin:0 0 6px; font-size: 20px; line-height:1.25;}
+    .q-help{ margin:0 0 14px; color: var(--muted); font-size: 13.5px;}
+    .answers{ display:flex; flex-direction:column; gap:12px; }
+    button.answer{
+      text-align:left;
+      width:100%;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background: rgba(6,10,20,.42);
+      color: var(--text);
+      cursor:pointer;
+      font-size: 15px;
+      transition: transform .05s ease, border-color .15s ease, background .15s ease;
+    }
+    button.answer:hover{
+      border-color: rgba(140,170,255,.33);
+      transform: translateY(-1px);
+      background: rgba(8,14,30,.55);
+    }
+    button.answer:disabled{
+      cursor:not-allowed;
+      opacity:.9;
+    }
+    .answer.good{ border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.12); }
+    .answer.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.10); }
+
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(140,170,255,.12);
+    }
+    .namebox{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex: 1;
+      min-width: 240px;
+    }
+    input{
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+    }
+    .btn{
+      padding: 11px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(96,165,250,.12);
+      color: var(--text);
+      cursor:pointer;
+      font-weight:600;
+    }
+    .btn:hover{ border-color: rgba(140,170,255,.33); }
+    .btn.secondary{ background: rgba(139,92,246,.12); }
+
+    .lb-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .lb-head h2{
+      margin:0;
+      font-size: 20px;
+    }
+    .small-pill{
+      border:1px solid var(--border);
+      background: rgba(5,10,25,.35);
+      color: var(--muted);
+      padding:8px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      white-space:nowrap;
+    }
+    .lb-desc{
+      margin: 6px 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height:1.35;
+    }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: 14px;
+    }
+    th, td{
+      text-align:left;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(140,170,255,.12);
+      font-size: 14px;
+    }
+    th{ color: var(--muted); font-weight:600; }
+    .note{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .toast{
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 18px;
+      line-height:1.35;
+    }
+    .toast strong{ color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Syensqo Weekly Quiz</h1>
+      <p class="subtitle">Answer quickly for a time bonus.</p>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-inner">
+          <div class="stats">
+            <div class="pill">Question: <b id="statQ">1 / 5</b></div>
+            <div class="pill">Correct: <b id="statC">0</b></div>
+            <div class="pill">Time left: <b><span id="statT">30</span> s</b></div>
+            <div class="pill">Score: <b id="statS">0</b></div>
+          </div>
+
+          <div class="progress"><div class="bar" id="bar"></div></div>
+
+          <h3 class="q-title" id="qTitle">Loading…</h3>
+          <p class="q-help" id="qHelp">Pick one answer. Faster completion yields a higher score.</p>
+
+          <div class="answers" id="answers"></div>
+
+          <div class="row">
+            <div class="namebox">
+              <label for="player" style="color:var(--muted);font-size:13px;min-width:54px;">Name</label>
+              <input id="player" placeholder="Enter your name (required to submit)" maxlength="60" />
+            </div>
+
+            <button class="btn secondary" id="btnRestart" type="button">Restart</button>
+            <button class="btn" id="btnSubmit" type="button" disabled>Submit result</button>
+          </div>
+
+          <div class="toast" id="toast"></div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="card-inner">
+          <div class="lb-head">
+            <h2>Leaderboard</h2>
+            <div class="small-pill">All players</div>
+          </div>
+          <p class="lb-desc">
+            Ranking: higher score wins. Tiebreakers: more correct, faster time.
+          </p>
+
+          <button class="btn" id="btnCSV" type="button">Download Leaderboard as CSV</button>
+
+          <div style="height:10px"></div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:45%">Name</th>
+                <th>Score</th>
+                <th>Correct</th>
+                <th>Time(s)</th>
+              </tr>
+            </thead>
+            <tbody id="lbBody"></tbody>
+          </table>
+          <div class="note">Open the downloaded CSV in Excel or Google Sheets.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // Power Automate HTTP trigger URL (paste-ready)
+  // NOTE: Treat this URL like a secret because it contains a signature (sig=...).
+  const POWER_AUTOMATE_URL =
+    "https://default5e60f7a7d4104d38b87593ca12adc3.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/899b9a3c914541c0af2719bf77613032/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=orFxomxolOpdOCpoEiZ4V-xVhRuhx8oNCAcIWGHFjCs";
+
+  // Configure quiz questions here
+  const QUIZ = [
+    {
+      text: "What is the REAL meaning of: “Let’s circle back later”",
+      options: [
+        "Important discussion pending",
+        "Need more data",
+        "We forgot the solution",
+        "This conversation is ending now"
+      ],
+      correctIndex: 0
+    },
+    {
+      text: "What does “EOD” usually mean in emails?",
+      options: ["Every other day", "End of day", "End of decade", "Edit or delete"],
+      correctIndex: 1
+    },
+    {
+      text: "Best practice for a meeting agenda is to…",
+      options: ["Skip it to save time", "Share it after the meeting", "Share it in advance", "Only discuss it verbally"],
+      correctIndex: 2
+    },
+    {
+      text: "A good subject line should be…",
+      options: ["Vague", "Short and specific", "All caps", "An emoji only"],
+      correctIndex: 1
+    },
+    {
+      text: "If you don’t know an answer, you should…",
+      options: ["Guess immediately", "Ask for clarification / check sources", "Stop responding", "Blame the tool"],
+      correctIndex: 1
+    }
+  ];
+
+  // ---- State ----
+  const secondsPerQuestion = 30;
+  let idx = 0;
+  let correct = 0;
+  let score = 0;
+  let timer = null;
+  let timeLeft = secondsPerQuestion;
+  let totalTimeSpent = 0;
+  let finished = false;
+
+  // Local leaderboard (per browser). Shared leaderboard would need a backend read endpoint.
+  const STORAGE_KEY = "weeklyQuizLeaderboard_v1";
+
+  // ---- Elements ----
+  const elQ = document.getElementById("statQ");
+  const elC = document.getElementById("statC");
+  const elT = document.getElementById("statT");
+  const elS = document.getElementById("statS");
+  const elBar = document.getElementById("bar");
+  const elTitle = document.getElementById("qTitle");
+  const elAns = document.getElementById("answers");
+  const elPlayer = document.getElementById("player");
+  const btnSubmit = document.getElementById("btnSubmit");
+  const btnRestart = document.getElementById("btnRestart");
+  const btnCSV = document.getElementById("btnCSV");
+  const elToast = document.getElementById("toast");
+  const lbBody = document.getElementById("lbBody");
+
+  function setToast(msg, mode="") {
+    elToast.innerHTML = msg ? msg : "";
+    if(mode === "good") elToast.style.color = "rgba(34,197,94,.95)";
+    else if(mode === "bad") elToast.style.color = "rgba(239,68,68,.95)";
+    else elToast.style.color = "var(--muted)";
+  }
+
+  function updateStats() {
+    elQ.textContent = `${Math.min(idx+1, QUIZ.length)} / ${QUIZ.length}`;
+    elC.textContent = `${correct}`;
+    elT.textContent = `${timeLeft}`;
+    elS.textContent = `${score}`;
+    elBar.style.width = `${(idx / QUIZ.length) * 100}%`;
+  }
+
+  function startTimer() {
+    clearInterval(timer);
+    timeLeft = secondsPerQuestion;
+    updateStats();
+    timer = setInterval(() => {
+      timeLeft -= 1;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        updateStats();
+        clearInterval(timer);
+        lockAnswers();
+        setTimeout(nextQuestion, 450);
+      } else {
+        updateStats();
+      }
+    }, 1000);
+  }
+
+  function lockAnswers() {
+    [...document.querySelectorAll("button.answer")].forEach(b => b.disabled = true);
+  }
+
+  function renderQuestion() {
+    setToast("");
+    finished = false;
+    btnSubmit.disabled = true;
+
+    const q = QUIZ[idx];
+    elTitle.textContent = q.text;
+    elAns.innerHTML = "";
+
+    q.options.forEach((opt, i) => {
+      const b = document.createElement("button");
+      b.className = "answer";
+      b.type = "button";
+      b.textContent = opt;
+      b.addEventListener("click", () => choose(i, b));
+      elAns.appendChild(b);
+    });
+
+    startTimer();
+    updateStats();
+  }
+
+  function choose(choiceIndex, btnEl) {
+    const q = QUIZ[idx];
+    lockAnswers();
+    clearInterval(timer);
+
+    const isCorrect = choiceIndex === q.correctIndex;
+    const remaining = timeLeft;
+
+    // scoring: base + time bonus if correct
+    if (isCorrect) {
+      correct += 1;
+      score += 100 + (remaining * 3);
+      btnEl.classList.add("good");
+    } else {
+      score += 10;
+      btnEl.classList.add("bad");
+      const buttons = [...document.querySelectorAll("button.answer")];
+      buttons[q.correctIndex]?.classList.add("good");
+    }
+
+    updateStats();
+    setTimeout(nextQuestion, 650);
+  }
+
+  function nextQuestion() {
+    const spent = secondsPerQuestion - timeLeft;
+    totalTimeSpent += spent;
+
+    idx += 1;
+    if (idx >= QUIZ.length) {
+      finishQuiz();
+      return;
+    }
+    renderQuestion();
+  }
+
+  function finishQuiz() {
+    clearInterval(timer);
+    finished = true;
+    elBar.style.width = "100%";
+    elTitle.textContent = "Quiz completed";
+    document.getElementById("qHelp").textContent =
+      `Your result: ${correct}/${QUIZ.length} correct • ${totalTimeSpent}s • score ${score}`;
+    elAns.innerHTML = "";
+
+    btnSubmit.disabled = !elPlayer.value.trim();
+    setToast("Enter your name and click <strong>Submit result</strong> to post to Power Automate.");
+    updateStats();
+  }
+
+  function loadLB() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+    catch { return []; }
+  }
+
+  function saveLB(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  function sortLB(list) {
+    return list.sort((a,b) =>
+      (b.score - a.score) ||
+      (b.correct - a.correct) ||
+      (a.timeSeconds - b.timeSeconds)
+    );
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  function renderLB() {
+    const list = sortLB(loadLB());
+    lbBody.innerHTML = "";
+    list.slice(0, 20).forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(r.name)}</td>
+        <td>${r.score}</td>
+        <td>${r.correct}</td>
+        <td>${r.timeSeconds}</td>
+      `;
+      lbBody.appendChild(tr);
+    });
+  }
+
+  async function submitResult() {
+    const name = elPlayer.value.trim();
+    if (!name) { setToast("Please enter your name first.", "bad"); return; }
+    if (!finished) { setToast("Finish the quiz before submitting.", "bad"); return; }
+
+    const payload = {
+      name,
+      score,
+      correct,
+      totalQuestions: QUIZ.length,
+      timeSeconds: totalTimeSpent,
+      page: location.href,
+      submittedAt: new Date().toISOString()
+    };
+
+    btnSubmit.disabled = true;
+    setToast("Submitting to Power Automate…");
+
+    try {
+      const res = await fetch(POWER_AUTOMATE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(()=> "");
+        throw new Error(`HTTP ${res.status} ${res.statusText} ${t}`.slice(0, 300));
+      }
+
+      // Local leaderboard update (for the UI). Power Automate/Excel remains your system of record.
+      const lb = loadLB();
+      lb.push(payload);
+      saveLB(lb);
+      renderLB();
+
+      setToast("Submitted successfully.", "good");
+    } catch (e) {
+      setToast(
+        `Submit failed: <strong>${escapeHtml(e.message)}</strong><br/>
+         If you see a CORS error in DevTools, add CORS headers in the Power Automate Response action.`,
+        "bad"
+      );
+      btnSubmit.disabled = false;
+    }
+  }
+
+  function downloadCSV() {
+    const list = sortLB(loadLB());
+    const header = ["name","score","correct","totalQuestions","timeSeconds","submittedAt","page"];
+    const rows = [header.join(",")].concat(
+      list.map(r => header.map(h => `"${String(r[h] ?? "").replace(/"/g,'""')}"`).join(","))
+    );
+    const blob = new Blob([rows.join("\n")], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "leaderboard.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function restart() {
+    clearInterval(timer);
+    idx = 0;
+    correct = 0;
+    score = 0;
+    totalTimeSpent = 0;
+    document.getElementById("qHelp").textContent =
+      "Pick one answer. Faster completion yields a higher score.";
+    renderQuestion();
+  }
+
+  elPlayer.addEventListener("input", () => {
+    if (finished) btnSubmit.disabled = !elPlayer.value.trim();
+  });
+
+  btnSubmit.addEventListener("click", submitResult);
+  btnRestart.addEventListener("click", restart);
+  btnCSV.addEventListener("click", downloadCSV);
+
+  renderLB();
+  renderQuestion();
+})();
+</script>
+</body>
+</html>
