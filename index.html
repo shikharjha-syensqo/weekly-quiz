@@ -6,9 +6,6 @@
   <title>Syensqo Weekly Quiz</title>
   <style>
     :root{
-      --bg:#070b17;
-      --panel:#0b1227;
-      --panel2:#0b152f;
       --border:rgba(140,170,255,.18);
       --text:#e8efff;
       --muted:#a9b7d6;
@@ -22,7 +19,7 @@
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       background:
         radial-gradient(1200px 600px at 40% 10%, rgba(96,165,250,.15), transparent 60%),
         radial-gradient(900px 500px at 80% 40%, rgba(139,92,246,.18), transparent 55%),
@@ -122,7 +119,10 @@
       font-weight:600;
     }
     .btn:hover{ border-color: rgba(140,170,255,.33); }
-    .btn.secondary{ background: rgba(139,92,246,.12); }
+    .btn:disabled{
+      cursor:not-allowed;
+      opacity:.55;
+    }
 
     .lb-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
     .lb-head h2{ margin:0; font-size:20px; }
@@ -145,7 +145,7 @@
       font-size:14px;
     }
     th{ color:var(--muted); font-weight:600; }
-    .note{ margin-top:10px; color: var(--muted); font-size:13px; }
+    .note{ margin-top:10px; color: var(--muted); font-size:13px; line-height:1.35; }
     .toast{ margin-top:10px; font-size:13px; color:var(--muted); min-height:18px; line-height:1.35; }
     .toast strong{ color: var(--text); }
   </style>
@@ -181,7 +181,6 @@
               <input id="player" placeholder="Enter your name (required to submit)" maxlength="60" />
             </div>
 
-            <button class="btn secondary" id="btnRestart" type="button">Restart</button>
             <button class="btn" id="btnSubmit" type="button" disabled>Submit result</button>
           </div>
 
@@ -189,18 +188,19 @@
         </div>
       </section>
 
-      <!-- Leaderboard -->
+      <!-- Leaderboard (disabled unless you implement a backend GET) -->
       <aside class="card">
         <div class="card-inner">
           <div class="lb-head">
             <h2>Leaderboard</h2>
-            <div class="small-pill">All players</div>
+            <div class="small-pill">Top scorers (overall)</div>
           </div>
+
           <p class="lb-desc">
-            Ranking: higher score wins. Tiebreakers: more correct, faster time.
+            Showing overall top scorers requires a backend “read” endpoint (GitHub Pages is static).
           </p>
 
-          <button class="btn" id="btnCSV" type="button">Download Leaderboard as CSV</button>
+          <button class="btn" id="btnCSV" type="button" disabled>Download Leaderboard as CSV</button>
 
           <div style="height:10px"></div>
           <table>
@@ -212,9 +212,19 @@
                 <th>Time(s)</th>
               </tr>
             </thead>
-            <tbody id="lbBody"></tbody>
+            <tbody id="lbBody">
+              <tr>
+                <td colspan="4" style="color:var(--muted); padding:12px 8px;">
+                  Leaderboard is disabled (no shared data source configured).
+                </td>
+              </tr>
+            </tbody>
           </table>
-          <div class="note">Open the downloaded CSV in Excel or Google Sheets.</div>
+
+          <div class="note">
+            If you want a real leaderboard, create a second Power Automate endpoint that returns the
+            top rows as JSON (GET), then this page can fetch and display them.
+          </div>
         </div>
       </aside>
     </div>
@@ -222,7 +232,7 @@
 
 <script>
 (() => {
-  // Power Automate HTTP trigger URL
+  // Power Automate HTTP trigger URL (POST)
   // IMPORTANT: this URL contains a signature (sig=...). Anyone can reuse it if they can view your page source.
   const POWER_AUTOMATE_URL =
     "https://default5e60f7a7d4104d38b87593ca12adc3.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/899b9a3c914541c0af2719bf77613032/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=orFxomxolOpdOCpoEiZ4V-xVhRuhx8oNCAcIWGHFjCs";
@@ -261,7 +271,7 @@
     }
   ];
 
-  // Helper: ISO week id like 2026-W01
+  // ISO week id like 2026-W01
   function getISOWeekId(d) {
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const dayNum = date.getUTCDay() || 7;
@@ -269,6 +279,25 @@
     const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
     return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  // ---- One submission only (per browser + per week) ----
+  // NOTE: On a static site you cannot reliably enforce “one submission per person overall”
+  // without authentication or a backend. This prevents repeat submissions from the same browser.
+  function submissionKeyForThisWeek() {
+    return `weeklyQuizSubmitted_${getISOWeekId(new Date())}`;
+  }
+  function hasSubmitted() {
+    return localStorage.getItem(submissionKeyForThisWeek()) === "1";
+  }
+  function markSubmitted() {
+    localStorage.setItem(submissionKeyForThisWeek(), "1");
   }
 
   // ---- State ----
@@ -281,9 +310,6 @@
   let totalTimeSpent = 0;
   let finished = false;
 
-  // Leaderboard (local browser only)
-  const STORAGE_KEY = "weeklyQuizLeaderboard_v1";
-
   // ---- Elements ----
   const elQ = document.getElementById("statQ");
   const elC = document.getElementById("statC");
@@ -291,13 +317,11 @@
   const elS = document.getElementById("statS");
   const elBar = document.getElementById("bar");
   const elTitle = document.getElementById("qTitle");
+  const elHelp = document.getElementById("qHelp");
   const elAns = document.getElementById("answers");
   const elPlayer = document.getElementById("player");
   const btnSubmit = document.getElementById("btnSubmit");
-  const btnRestart = document.getElementById("btnRestart");
-  const btnCSV = document.getElementById("btnCSV");
   const elToast = document.getElementById("toast");
-  const lbBody = document.getElementById("lbBody");
 
   function setToast(msg, mode="") {
     elToast.innerHTML = msg ? msg : "";
@@ -338,8 +362,6 @@
 
   function renderQuestion() {
     setToast("");
-    finished = false;
-    btnSubmit.disabled = true;
 
     const q = QUIZ[idx];
     elTitle.textContent = q.text;
@@ -366,7 +388,6 @@
     const isCorrect = choiceIndex === q.correctIndex;
     const remaining = timeLeft;
 
-    // scoring: base + time bonus if correct
     if (isCorrect) {
       correct += 1;
       score += 100 + (remaining * 3);
@@ -398,58 +419,37 @@
     finished = true;
     elBar.style.width = "100%";
     elTitle.textContent = "Quiz completed";
-    document.getElementById("qHelp").textContent =
-      `Your result: ${correct}/${QUIZ.length} correct • ${totalTimeSpent}s • score ${score}`;
+    elHelp.textContent = `Your result: ${correct}/${QUIZ.length} correct • ${totalTimeSpent}s • score ${score}`;
     elAns.innerHTML = "";
 
-    btnSubmit.disabled = !elPlayer.value.trim();
-    setToast("Enter your name and click <strong>Submit result</strong> to post to Power Automate.");
+    if (hasSubmitted()) {
+      btnSubmit.disabled = true;
+      elPlayer.disabled = true;
+      setToast("You have already submitted this week. Submission is limited to one per browser.", "bad");
+    } else {
+      btnSubmit.disabled = !elPlayer.value.trim();
+      setToast("Enter your name and click <strong>Submit result</strong> (one submission only).");
+    }
     updateStats();
   }
 
-  function loadLB() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-    catch { return []; }
-  }
-  function saveLB(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-  function sortLB(list) {
-    return list.sort((a,b) =>
-      (b.score - a.score) ||
-      (b.correct - a.correct) ||
-      (a.timeSeconds - b.timeSeconds)
-    );
-  }
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m]));
-  }
-  function renderLB() {
-    const list = sortLB(loadLB());
-    lbBody.innerHTML = "";
-    list.slice(0, 20).forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(r.name)}</td>
-        <td>${r.score}</td>
-        <td>${r.correct}</td>
-        <td>${r.timeSeconds}</td>
-      `;
-      lbBody.appendChild(tr);
-    });
-  }
-
   async function submitResult() {
+    if (hasSubmitted()) {
+      btnSubmit.disabled = true;
+      elPlayer.disabled = true;
+      setToast("You have already submitted this week.", "bad");
+      return;
+    }
+
     const name = elPlayer.value.trim();
     if (!name) { setToast("Please enter your name first.", "bad"); return; }
     if (!finished) { setToast("Finish the quiz before submitting.", "bad"); return; }
 
-    // Payload matches your Excel columns: weekid, name, score, correct, time, ts
     const payload = {
       weekId: getISOWeekId(new Date()),
-      name: name,
-      score: score,
-      correct: correct,
+      name,
+      score,
+      correct,
       time: totalTimeSpent,
       ts: Date.now()
     };
@@ -469,64 +469,36 @@
         throw new Error(`HTTP ${res.status} ${res.statusText} ${t}`.slice(0, 300));
       }
 
-      // Local leaderboard (UI only)
-      const lb = loadLB();
-      lb.push({
-        ...payload,
-        totalQuestions: QUIZ.length,
-        timeSeconds: payload.time, // for table display
-        submittedAt: new Date(payload.ts).toISOString(),
-        page: location.href
-      });
-      saveLB(lb);
-      renderLB();
+      // Mark submitted (prevents re-submit from the same browser this week)
+      markSubmitted();
 
-      setToast("Submitted successfully.", "good");
+      // Lock the name field too
+      elPlayer.disabled = true;
+
+      setToast("Submitted successfully. You can’t submit again this week from this browser.", "good");
     } catch (e) {
+      // Allow retry if it failed
+      btnSubmit.disabled = false;
       setToast(
         `Submit failed: <strong>${escapeHtml(e.message)}</strong><br/>
          If you see a CORS error in DevTools, add CORS headers in the Power Automate Response action.`,
         "bad"
       );
-      btnSubmit.disabled = false;
     }
   }
 
-  function downloadCSV() {
-    const list = sortLB(loadLB());
-    const header = ["weekId","name","score","correct","time","ts"];
-    const rows = [header.join(",")].concat(
-      list.map(r => header.map(h => `"${String(r[h] ?? "").replace(/"/g,'""')}"`).join(","))
-    );
-    const blob = new Blob([rows.join("\n")], {type:"text/csv;charset=utf-8"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "leaderboard.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function restart() {
-    clearInterval(timer);
-    idx = 0;
-    correct = 0;
-    score = 0;
-    totalTimeSpent = 0;
-    document.getElementById("qHelp").textContent =
-      "Pick one answer. Faster completion yields a higher score.";
-    renderQuestion();
-  }
-
+  // Enable submit once name is typed (after finish)
   elPlayer.addEventListener("input", () => {
-    if (finished) btnSubmit.disabled = !elPlayer.value.trim();
+    if (finished && !hasSubmitted()) btnSubmit.disabled = !elPlayer.value.trim();
   });
 
   btnSubmit.addEventListener("click", submitResult);
-  btnRestart.addEventListener("click", restart);
-  btnCSV.addEventListener("click", downloadCSV);
 
-  renderLB();
+  // Init
+  if (hasSubmitted()) {
+    // Still allow user to take the quiz, but they cannot submit
+    setToast("Note: you have already submitted this week from this browser. You may still take the quiz, but cannot submit again.");
+  }
   renderQuestion();
 })();
 </script>
