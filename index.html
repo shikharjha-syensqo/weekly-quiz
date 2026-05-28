@@ -35,6 +35,7 @@
     header{ margin-bottom:18px; }
     h1{ margin:0 0 6px; font-size:34px; letter-spacing:.2px; }
     .subtitle{ margin:0; color:var(--muted); font-size:15px; }
+
     .card{
       display:inline-block;
       text-align:left;
@@ -46,6 +47,7 @@
       overflow:hidden;
     }
     .card-inner{ padding:18px; }
+
     .stats{
       display:flex;
       gap:12px;
@@ -62,6 +64,7 @@
       min-width:160px;
     }
     .pill b{ color:var(--text); font-weight:600; }
+
     .progress{
       height:10px; width:100%;
       border-radius:999px;
@@ -75,9 +78,11 @@
       background: linear-gradient(90deg, var(--accent2), var(--accent));
       transition: width .2s ease;
     }
+
     .q-title{ margin:0 0 6px; font-size:20px; line-height:1.25; text-align:center; }
     .q-help{ margin:0 0 14px; color:var(--muted); font-size:13.5px; text-align:center; }
     .answers{ display:flex; flex-direction:column; gap:12px; }
+
     button.answer{
       text-align:left; width:100%;
       padding:14px 14px;
@@ -97,6 +102,7 @@
     button.answer:disabled{ cursor:not-allowed; opacity:.9; }
     .answer.good{ border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.12); }
     .answer.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.10); }
+
     .row{
       display:flex; gap:10px;
       align-items:center; justify-content:flex-end;
@@ -115,6 +121,7 @@
     }
     .btn:hover{ border-color: rgba(140,170,255,.33); }
     .btn:disabled{ cursor:not-allowed; opacity:.55; }
+
     .toast{
       margin-top:10px;
       font-size:13px;
@@ -131,22 +138,26 @@
       line-height:1.35;
       text-align:center;
     }
-    /* Modal styles */
+
+    /* Modal */
     .modal-bg {
-      position:fixed; left:0; top:0; width:100vw; height:100vh;
+      position:fixed; inset:0;
       background:rgba(10,16,32,.85);
-      z-index:1000; display:flex; align-items:center; justify-content:center;
+      z-index:1000;
+      display:flex; align-items:center; justify-content:center;
+      padding: 18px;
     }
     .modal {
       background: #10172a;
       border-radius: 16px;
       box-shadow: var(--shadow);
-      padding: 32px 24px 24px 24px;
-      max-width: 350px;
+      padding: 28px 22px 20px;
+      max-width: 360px;
       width: 100%;
       text-align:center;
       border:1px solid var(--border);
     }
+    .modal h2{ margin:0 0 14px; font-size:20px; }
     .modal label {
       display:block;
       color:var(--muted);
@@ -161,19 +172,28 @@
       border:1px solid var(--border);
       background:rgba(0,0,0,.18);
       color:var(--text);
-      margin-bottom:16px;
+      margin-bottom:14px;
       font-size:15px;
+      outline:none;
     }
-    .modal .btn {
-      width:100%;
-      margin-top:8px;
-      font-size:16px;
-    }
+    .modal .btn { width:100%; font-size:16px; }
     .modal .error {
       color:var(--bad);
       font-size:13px;
-      margin-bottom:8px;
+      margin: 2px 0 10px;
       min-height:18px;
+      text-align:left;
+    }
+    .modal .hint{
+      color:var(--muted);
+      font-size:12.5px;
+      margin-top:10px;
+      line-height:1.35;
+      text-align:left;
+    }
+    .domain{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      color: rgba(96,165,250,.95);
     }
   </style>
 </head>
@@ -183,6 +203,7 @@
       <h1>Syensqo GCC Weekly Quiz</h1>
       <p class="subtitle">Answer quickly for a time bonus.</p>
     </header>
+
     <section class="card">
       <div class="card-inner">
         <div class="stats">
@@ -191,37 +212,53 @@
           <div class="pill">Time left: <b><span id="statT">30</span> s</b></div>
           <div class="pill">Score: <b id="statS">0</b></div>
         </div>
+
         <div class="progress"><div class="bar" id="bar"></div></div>
-        <h3 class="q-title" id="qTitle">Loading…</h3>
-        <p class="q-help" id="qHelp">Pick one answer. Faster completion yields a higher score.</p>
+
+        <h3 class="q-title" id="qTitle">Please enter your details to begin</h3>
+        <p class="q-help" id="qHelp"></p>
+
         <div class="answers" id="answers"></div>
+
         <div class="row">
           <button class="btn" id="btnSubmit" type="button" disabled>Submit result</button>
         </div>
+
         <div class="toast" id="toast"></div>
+
         <div class="note">
           One submission per week is enforced per browser (static sites cannot reliably enforce per-user limits without sign-in).
         </div>
       </div>
     </section>
-    <!-- Modal for name/email -->
+
+    <!-- Mandatory details modal -->
     <div class="modal-bg" id="modalBg">
       <form class="modal" id="modalForm" autocomplete="off">
-        <h2 style="margin-top:0;margin-bottom:18px;font-size:22px;">Enter your details to begin</h2>
+        <h2>Enter your details to begin</h2>
         <div class="error" id="modalError"></div>
+
         <label for="modalName">Name</label>
         <input id="modalName" type="text" maxlength="60" required autocomplete="name" />
+
         <label for="modalEmail">Email</label>
-        <input id="modalEmail" type="email" maxlength="80" required autocomplete="email" />
+        <input id="modalEmail" type="email" maxlength="80" required autocomplete="email" placeholder="firstname.lastname@syensqo.com" />
+
         <button class="btn" type="submit">Start Quiz</button>
+
+        <div class="hint">
+          Email must end with <span class="domain">@syensqo.com</span>.
+        </div>
       </form>
     </div>
   </div>
+
 <script>
 (() => {
-  // POST endpoint (your existing Power Automate flow)
   const POWER_AUTOMATE_POST_URL =
     "https://default5e60f7a7d4104d38b87593ca12adc3.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/899b9a3c914541c0af2719bf77613032/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=orFxomxolOpdOCpoEiZ4V-xVhRuhx8oNCAcIWGHFjCs";
+
+  const ALLOWED_DOMAIN = "syensqo.com";
 
   const QUIZ = [
     {
@@ -271,6 +308,13 @@
     }[m]));
   }
 
+  function isSyensqoEmail(email) {
+    const e = String(email || "").trim().toLowerCase();
+    // Basic email structure + domain enforcement
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
+    return e.endsWith("@" + ALLOWED_DOMAIN);
+  }
+
   // One submission only (per browser + per week)
   function submissionKeyForThisWeek() {
     return `weeklyQuizSubmitted_${getISOWeekId(new Date())}`;
@@ -289,12 +333,19 @@
   const elAns = document.getElementById("answers");
   const btnSubmit = document.getElementById("btnSubmit");
   const elToast = document.getElementById("toast");
-  // Modal
+
   const modalBg = document.getElementById("modalBg");
   const modalForm = document.getElementById("modalForm");
   const modalName = document.getElementById("modalName");
   const modalEmail = document.getElementById("modalEmail");
   const modalError = document.getElementById("modalError");
+
+  function setToast(msg, mode="") {
+    elToast.innerHTML = msg ? msg : "";
+    if(mode === "good") elToast.style.color = "rgba(34,197,94,.95)";
+    else if(mode === "bad") elToast.style.color = "rgba(239,68,68,.95)";
+    else elToast.style.color = "var(--muted)";
+  }
 
   // ---- Quiz State ----
   const secondsPerQuestion = 30;
@@ -305,15 +356,9 @@
   let timeLeft = secondsPerQuestion;
   let totalTimeSpent = 0;
   let finished = false;
+
   let userName = "";
   let userEmail = "";
-
-  function setToast(msg, mode="") {
-    elToast.innerHTML = msg ? msg : "";
-    if(mode === "good") elToast.style.color = "rgba(34,197,94,.95)";
-    else if(mode === "bad") elToast.style.color = "rgba(239,68,68,.95)";
-    else elToast.style.color = "var(--muted)";
-  }
 
   function updateStats() {
     elQ.textContent = `${Math.min(idx+1, QUIZ.length)} / ${QUIZ.length}`;
@@ -335,9 +380,7 @@
         clearInterval(timer);
         lockAnswers();
         setTimeout(nextQuestion, 450);
-      } else {
-        updateStats();
-      }
+      } else updateStats();
     }, 1000);
   }
 
@@ -349,6 +392,7 @@
     setToast("");
     const q = QUIZ[idx];
     elTitle.textContent = q.text;
+    elHelp.textContent = "Pick one answer. Faster completion yields a higher score.";
     elAns.innerHTML = "";
 
     q.options.forEach((opt, i) => {
@@ -407,7 +451,7 @@
       setToast("You have already submitted this week from this browser.", "bad");
     } else {
       btnSubmit.disabled = false;
-      setToast("Click <strong>Submit result</strong> to register your participation.");
+      setToast(`Ready to submit as <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)}).`);
     }
     updateStats();
   }
@@ -463,41 +507,39 @@
 
   btnSubmit.addEventListener("click", submitResult);
 
-  // Modal logic
-  modalForm.addEventListener("submit", function(e){
+  // Modal logic (mandatory)
+  modalForm.addEventListener("submit", (e) => {
     e.preventDefault();
+
     const name = modalName.value.trim();
-    const email = modalEmail.value.trim();
-    let error = "";
-    if (!name) error = "Please enter your name.";
-    else if (!email) error = "Please enter your email.";
-    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) error = "Please enter a valid email address.";
-    if (error) {
-      modalError.textContent = error;
+    const email = modalEmail.value.trim().toLowerCase();
+
+    if (!name) {
+      modalError.textContent = "Please enter your name.";
       return;
     }
+    if (!email) {
+      modalError.textContent = "Please enter your email.";
+      return;
+    }
+    if (!isSyensqoEmail(email)) {
+      modalError.textContent = `Email must be a valid address ending with @${ALLOWED_DOMAIN}.`;
+      return;
+    }
+
+    modalError.textContent = "";
     userName = name;
     userEmail = email;
+
     modalBg.style.display = "none";
     renderQuestion();
   });
 
-  // Prevent quiz from starting until modal is completed
-  window.addEventListener("DOMContentLoaded", function(){
-    modalBg.style.display = "";
-    modalName.value = "";
-    modalEmail.value = "";
-    modalError.textContent = "";
-    btnSubmit.disabled = true;
-    elTitle.textContent = "Please enter your details to begin";
-    elHelp.textContent = "";
-    elAns.innerHTML = "";
-  });
-
-  // If already submitted, show message after modal
+  // Init
   if (hasSubmitted()) {
     setToast("Note: you have already submitted this week from this browser. You may still take the quiz, but cannot submit again.");
   }
+  updateStats();
 })();
 </script>
 </body>
