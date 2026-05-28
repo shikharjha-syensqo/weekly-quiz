@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Syensqo Weekly Quiz</title>
+  <title>Syensqo GCC Weekly Quiz</title>
   <style>
     :root{
       --border:rgba(140,170,255,.18);
@@ -26,15 +26,19 @@
         linear-gradient(180deg, #050816, #060a14 60%, #030510);
       color:var(--text);
     }
-    .wrap{ max-width:1120px; margin:48px auto; padding:0 18px; }
+    .wrap{
+      max-width: 980px;
+      margin: 48px auto;
+      padding: 0 18px;
+      text-align:center;
+    }
     header{ margin-bottom:18px; }
     h1{ margin:0 0 6px; font-size:34px; letter-spacing:.2px; }
     .subtitle{ margin:0; color:var(--muted); font-size:15px; }
-
-    .grid{ margin-top:18px; display:grid; grid-template-columns:1.45fr .9fr; gap:18px; align-items:start; }
-    @media (max-width:980px){ .grid{ grid-template-columns:1fr; } }
-
     .card{
+      display:inline-block;
+      text-align:left;
+      width: min(760px, 100%);
       background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
       border:1px solid var(--border);
       border-radius: var(--radius);
@@ -42,8 +46,13 @@
       overflow:hidden;
     }
     .card-inner{ padding:18px; }
-
-    .stats{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .stats{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+      justify-content:center;
+    }
     .pill{
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       padding:10px 12px; border-radius:999px;
@@ -53,7 +62,6 @@
       min-width:160px;
     }
     .pill b{ color:var(--text); font-weight:600; }
-
     .progress{
       height:10px; width:100%;
       border-radius:999px;
@@ -67,11 +75,9 @@
       background: linear-gradient(90deg, var(--accent2), var(--accent));
       transition: width .2s ease;
     }
-
-    .q-title{ margin:0 0 6px; font-size:20px; line-height:1.25; }
-    .q-help{ margin:0 0 14px; color:var(--muted); font-size:13.5px; }
+    .q-title{ margin:0 0 6px; font-size:20px; line-height:1.25; text-align:center; }
+    .q-help{ margin:0 0 14px; color:var(--muted); font-size:13.5px; text-align:center; }
     .answers{ display:flex; flex-direction:column; gap:12px; }
-
     button.answer{
       text-align:left; width:100%;
       padding:14px 14px;
@@ -91,23 +97,12 @@
     button.answer:disabled{ cursor:not-allowed; opacity:.9; }
     .answer.good{ border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.12); }
     .answer.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.10); }
-
     .row{
       display:flex; gap:10px;
-      align-items:center; justify-content:space-between;
+      align-items:center; justify-content:flex-end;
       flex-wrap:wrap;
       margin-top:14px; padding-top:14px;
       border-top: 1px solid rgba(140,170,255,.12);
-    }
-    .namebox{ display:flex; gap:10px; align-items:center; flex:1; min-width:240px; }
-    input{
-      width:100%;
-      padding:11px 12px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.22);
-      color: var(--text);
-      outline:none;
     }
     .btn{
       padding:11px 12px;
@@ -120,105 +115,113 @@
     }
     .btn:hover{ border-color: rgba(140,170,255,.33); }
     .btn:disabled{ cursor:not-allowed; opacity:.55; }
-
-    /* Leaderboard */
-    .lb-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-    .lb-head h2{ margin:0; font-size:20px; }
-    .small-pill{
-      border:1px solid var(--border);
-      background: rgba(5,10,25,.35);
-      color: var(--muted);
-      padding:8px 10px;
-      border-radius:999px;
+    .toast{
+      margin-top:10px;
       font-size:13px;
-      white-space:nowrap;
+      color:var(--muted);
+      min-height:18px;
+      line-height:1.35;
+      text-align:center;
     }
-
-    table{ width:100%; border-collapse: collapse; overflow:hidden; border-radius: 14px; }
-    th, td{
-      text-align:left;
-      padding:10px 8px;
-      border-bottom:1px solid rgba(140,170,255,.12);
-      font-size:14px;
-    }
-    th{ color:var(--muted); font-weight:600; }
-
-    .toast{ margin-top:10px; font-size:13px; color:var(--muted); min-height:18px; line-height:1.35; }
     .toast strong{ color: var(--text); }
+    .note{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12.5px;
+      line-height:1.35;
+      text-align:center;
+    }
+    /* Modal styles */
+    .modal-bg {
+      position:fixed; left:0; top:0; width:100vw; height:100vh;
+      background:rgba(10,16,32,.85);
+      z-index:1000; display:flex; align-items:center; justify-content:center;
+    }
+    .modal {
+      background: #10172a;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 32px 24px 24px 24px;
+      max-width: 350px;
+      width: 100%;
+      text-align:center;
+      border:1px solid var(--border);
+    }
+    .modal label {
+      display:block;
+      color:var(--muted);
+      font-size:14px;
+      margin-bottom:4px;
+      text-align:left;
+    }
+    .modal input {
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      margin-bottom:16px;
+      font-size:15px;
+    }
+    .modal .btn {
+      width:100%;
+      margin-top:8px;
+      font-size:16px;
+    }
+    .modal .error {
+      color:var(--bad);
+      font-size:13px;
+      margin-bottom:8px;
+      min-height:18px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Syensqo Weekly Quiz</h1>
+      <h1>Syensqo GCC Weekly Quiz</h1>
       <p class="subtitle">Answer quickly for a time bonus.</p>
     </header>
-
-    <div class="grid">
-      <!-- Quiz -->
-      <section class="card">
-        <div class="card-inner">
-          <div class="stats">
-            <div class="pill">Question: <b id="statQ">1 / 5</b></div>
-            <div class="pill">Correct: <b id="statC">0</b></div>
-            <div class="pill">Time left: <b><span id="statT">30</span> s</b></div>
-            <div class="pill">Score: <b id="statS">0</b></div>
-          </div>
-
-          <div class="progress"><div class="bar" id="bar"></div></div>
-
-          <h3 class="q-title" id="qTitle">Loading…</h3>
-          <p class="q-help" id="qHelp">Pick one answer. Faster completion yields a higher score.</p>
-
-          <div class="answers" id="answers"></div>
-
-          <div class="row">
-            <div class="namebox">
-              <label for="player" style="color:var(--muted);font-size:13px;min-width:54px;">Name</label>
-              <input id="player" placeholder="Enter your name (required to submit)" maxlength="60" />
-            </div>
-
-            <button class="btn" id="btnSubmit" type="button" disabled>Submit result</button>
-          </div>
-
-          <div class="toast" id="toast"></div>
+    <section class="card">
+      <div class="card-inner">
+        <div class="stats">
+          <div class="pill">Question: <b id="statQ">1 / 5</b></div>
+          <div class="pill">Correct: <b id="statC">0</b></div>
+          <div class="pill">Time left: <b><span id="statT">30</span> s</b></div>
+          <div class="pill">Score: <b id="statS">0</b></div>
         </div>
-      </section>
-
-      <!-- Leaderboard (only shown if a GET endpoint is configured) -->
-      <aside class="card" id="lbCard" style="display:none;">
-        <div class="card-inner">
-          <div class="lb-head">
-            <h2>Leaderboard</h2>
-            <div class="small-pill">Top scorers</div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th style="width:45%">Name</th>
-                <th>Score</th>
-                <th>Correct</th>
-                <th>Time(s)</th>
-              </tr>
-            </thead>
-            <tbody id="lbBody"></tbody>
-          </table>
+        <div class="progress"><div class="bar" id="bar"></div></div>
+        <h3 class="q-title" id="qTitle">Loading…</h3>
+        <p class="q-help" id="qHelp">Pick one answer. Faster completion yields a higher score.</p>
+        <div class="answers" id="answers"></div>
+        <div class="row">
+          <button class="btn" id="btnSubmit" type="button" disabled>Submit result</button>
         </div>
-      </aside>
+        <div class="toast" id="toast"></div>
+        <div class="note">
+          One submission per week is enforced per browser (static sites cannot reliably enforce per-user limits without sign-in).
+        </div>
+      </div>
+    </section>
+    <!-- Modal for name/email -->
+    <div class="modal-bg" id="modalBg">
+      <form class="modal" id="modalForm" autocomplete="off">
+        <h2 style="margin-top:0;margin-bottom:18px;font-size:22px;">Enter your details to begin</h2>
+        <div class="error" id="modalError"></div>
+        <label for="modalName">Name</label>
+        <input id="modalName" type="text" maxlength="60" required autocomplete="name" />
+        <label for="modalEmail">Email</label>
+        <input id="modalEmail" type="email" maxlength="80" required autocomplete="email" />
+        <button class="btn" type="submit">Start Quiz</button>
+      </form>
     </div>
   </div>
-
 <script>
 (() => {
   // POST endpoint (your existing Power Automate flow)
-  // IMPORTANT: this URL contains a signature (sig=...). Do not publish it publicly unless approved.
   const POWER_AUTOMATE_POST_URL =
     "https://default5e60f7a7d4104d38b87593ca12adc3.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/899b9a3c914541c0af2719bf77613032/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=orFxomxolOpdOCpoEiZ4V-xVhRuhx8oNCAcIWGHFjCs";
-
-  // GET leaderboard endpoint (must be a separate Power Automate flow that returns JSON)
-  // Leave as "" to hide the leaderboard entirely.
-  const LEADERBOARD_GET_URL = ""; // <-- paste your GET endpoint URL here
 
   const QUIZ = [
     {
@@ -269,7 +272,6 @@
   }
 
   // One submission only (per browser + per week)
-  // True "one submission per user overall" requires authentication/back-end enforcement.
   function submissionKeyForThisWeek() {
     return `weeklyQuizSubmitted_${getISOWeekId(new Date())}`;
   }
@@ -285,20 +287,14 @@
   const elTitle = document.getElementById("qTitle");
   const elHelp = document.getElementById("qHelp");
   const elAns = document.getElementById("answers");
-  const elPlayer = document.getElementById("player");
   const btnSubmit = document.getElementById("btnSubmit");
   const elToast = document.getElementById("toast");
-
-  // Leaderboard elements
-  const lbCard = document.getElementById("lbCard");
-  const lbBody = document.getElementById("lbBody");
-
-  function setToast(msg, mode="") {
-    elToast.innerHTML = msg ? msg : "";
-    if(mode === "good") elToast.style.color = "rgba(34,197,94,.95)";
-    else if(mode === "bad") elToast.style.color = "rgba(239,68,68,.95)";
-    else elToast.style.color = "var(--muted)";
-  }
+  // Modal
+  const modalBg = document.getElementById("modalBg");
+  const modalForm = document.getElementById("modalForm");
+  const modalName = document.getElementById("modalName");
+  const modalEmail = document.getElementById("modalEmail");
+  const modalError = document.getElementById("modalError");
 
   // ---- Quiz State ----
   const secondsPerQuestion = 30;
@@ -309,6 +305,15 @@
   let timeLeft = secondsPerQuestion;
   let totalTimeSpent = 0;
   let finished = false;
+  let userName = "";
+  let userEmail = "";
+
+  function setToast(msg, mode="") {
+    elToast.innerHTML = msg ? msg : "";
+    if(mode === "good") elToast.style.color = "rgba(34,197,94,.95)";
+    else if(mode === "bad") elToast.style.color = "rgba(239,68,68,.95)";
+    else elToast.style.color = "var(--muted)";
+  }
 
   function updateStats() {
     elQ.textContent = `${Math.min(idx+1, QUIZ.length)} / ${QUIZ.length}`;
@@ -330,7 +335,9 @@
         clearInterval(timer);
         lockAnswers();
         setTimeout(nextQuestion, 450);
-      } else updateStats();
+      } else {
+        updateStats();
+      }
     }, 1000);
   }
 
@@ -397,11 +404,10 @@
 
     if (hasSubmitted()) {
       btnSubmit.disabled = true;
-      elPlayer.disabled = true;
-      setToast("You have already submitted this week. Submission is limited to one per browser.", "bad");
+      setToast("You have already submitted this week from this browser.", "bad");
     } else {
-      btnSubmit.disabled = !elPlayer.value.trim();
-      setToast("Enter your name and click <strong>Submit result</strong> (one submission only).");
+      btnSubmit.disabled = false;
+      setToast("Click <strong>Submit result</strong> to register your participation.");
     }
     updateStats();
   }
@@ -409,22 +415,23 @@
   async function submitResult() {
     if (hasSubmitted()) {
       btnSubmit.disabled = true;
-      elPlayer.disabled = true;
-      setToast("You have already submitted this week.", "bad");
+      setToast("You have already submitted this week from this browser.", "bad");
+      return;
+    }
+    if (!finished) {
+      setToast("Finish the quiz before submitting.", "bad");
       return;
     }
 
-    const name = elPlayer.value.trim();
-    if (!name) { setToast("Please enter your name first.", "bad"); return; }
-    if (!finished) { setToast("Finish the quiz before submitting.", "bad"); return; }
-
     const payload = {
       weekId: getISOWeekId(new Date()),
-      name,
+      name: userName,
+      email: userEmail,
       score,
       correct,
       time: totalTimeSpent,
-      ts: Date.now()
+      ts: Date.now(),
+      page: location.href
     };
 
     btnSubmit.disabled = true;
@@ -443,11 +450,7 @@
       }
 
       markSubmitted();
-      elPlayer.disabled = true;
       setToast("Submitted successfully. You can’t submit again this week from this browser.", "good");
-
-      // Refresh leaderboard after submit (if enabled)
-      await loadLeaderboard();
     } catch (e) {
       btnSubmit.disabled = false;
       setToast(
@@ -458,65 +461,43 @@
     }
   }
 
-  elPlayer.addEventListener("input", () => {
-    if (finished && !hasSubmitted()) btnSubmit.disabled = !elPlayer.value.trim();
-  });
   btnSubmit.addEventListener("click", submitResult);
 
-  // ---- Leaderboard (shown only when configured) ----
-  function isLeaderboardEnabled() {
-    return typeof LEADERBOARD_GET_URL === "string" && LEADERBOARD_GET_URL.trim().length > 0;
-  }
-
-  function renderLeaderboard(items) {
-    lbBody.innerHTML = "";
-    if (!items || items.length === 0) {
-      // If enabled but empty, keep it clean: show nothing
+  // Modal logic
+  modalForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    const name = modalName.value.trim();
+    const email = modalEmail.value.trim();
+    let error = "";
+    if (!name) error = "Please enter your name.";
+    else if (!email) error = "Please enter your email.";
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) error = "Please enter a valid email address.";
+    if (error) {
+      modalError.textContent = error;
       return;
     }
-    items.slice(0, 10).forEach(r => {
-      lbBody.insertAdjacentHTML("beforeend", `
-        <tr>
-          <td>${escapeHtml(r.name ?? "")}</td>
-          <td>${escapeHtml(r.score ?? "")}</td>
-          <td>${escapeHtml(r.correct ?? "")}</td>
-          <td>${escapeHtml(r.time ?? "")}</td>
-        </tr>
-      `);
-    });
-  }
+    userName = name;
+    userEmail = email;
+    modalBg.style.display = "none";
+    renderQuestion();
+  });
 
-  async function loadLeaderboard() {
-    if (!isLeaderboardEnabled()) return;
+  // Prevent quiz from starting until modal is completed
+  window.addEventListener("DOMContentLoaded", function(){
+    modalBg.style.display = "";
+    modalName.value = "";
+    modalEmail.value = "";
+    modalError.textContent = "";
+    btnSubmit.disabled = true;
+    elTitle.textContent = "Please enter your details to begin";
+    elHelp.textContent = "";
+    elAns.innerHTML = "";
+  });
 
-    try {
-      const res = await fetch(LEADERBOARD_GET_URL, { method: "GET" });
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-      const data = await res.json();
-
-      // Accept either array or {items:[...]} or {value:[...]}
-      const items = Array.isArray(data) ? data : (data.items || data.value || []);
-      renderLeaderboard(items);
-    } catch (e) {
-      // If it fails, hide leaderboard completely (no placeholders)
-      lbCard.style.display = "none";
-      console.error("Leaderboard load failed:", e);
-    }
-  }
-
-  // Init
-  if (isLeaderboardEnabled()) {
-    lbCard.style.display = "";
-    loadLeaderboard();
-  } else {
-    lbCard.style.display = "none"; // remove placeholders entirely
-  }
-
+  // If already submitted, show message after modal
   if (hasSubmitted()) {
     setToast("Note: you have already submitted this week from this browser. You may still take the quiz, but cannot submit again.");
   }
-
-  renderQuestion();
 })();
 </script>
 </body>
