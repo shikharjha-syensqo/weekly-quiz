@@ -131,13 +131,6 @@
       text-align:center;
     }
     .toast strong{ color: var(--text); }
-    .note{
-      margin-top:10px;
-      color:var(--muted);
-      font-size:12.5px;
-      line-height:1.35;
-      text-align:center;
-    }
 
     /* Modal */
     .modal-bg {
@@ -225,10 +218,6 @@
         </div>
 
         <div class="toast" id="toast"></div>
-
-        <div class="note">
-          One submission per week is enforced per browser (static sites cannot reliably enforce per-user limits without sign-in).
-        </div>
       </div>
     </section>
 
@@ -242,7 +231,8 @@
         <input id="modalName" type="text" maxlength="60" required autocomplete="name" />
 
         <label for="modalEmail">Email</label>
-        <input id="modalEmail" type="email" maxlength="80" required autocomplete="email" placeholder="firstname.lastname@syensqo.com" />
+        <input id="modalEmail" type="email" maxlength="80" required autocomplete="email"
+               placeholder="firstname.lastname@syensqo.com" />
 
         <button class="btn" type="submit">Start Quiz</button>
 
@@ -310,12 +300,11 @@
 
   function isSyensqoEmail(email) {
     const e = String(email || "").trim().toLowerCase();
-    // Basic email structure + domain enforcement
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
     return e.endsWith("@" + ALLOWED_DOMAIN);
   }
 
-  // One submission only (per browser + per week)
+  // "One submission per week" (tracked locally)
   function submissionKeyForThisWeek() {
     return `weeklyQuizSubmitted_${getISOWeekId(new Date())}`;
   }
@@ -448,10 +437,10 @@
 
     if (hasSubmitted()) {
       btnSubmit.disabled = true;
-      setToast("You have already submitted this week from this browser.", "bad");
+      setToast("You have already submitted the quiz this week.", "bad");
     } else {
       btnSubmit.disabled = false;
-      setToast(`Ready to submit as <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)}).`);
+      setToast("Only one submission is allowed per week.");
     }
     updateStats();
   }
@@ -459,7 +448,7 @@
   async function submitResult() {
     if (hasSubmitted()) {
       btnSubmit.disabled = true;
-      setToast("You have already submitted this week from this browser.", "bad");
+      setToast("You have already submitted the quiz this week.", "bad");
       return;
     }
     if (!finished) {
@@ -479,7 +468,7 @@
     };
 
     btnSubmit.disabled = true;
-    setToast("Submitting to Power Automate…");
+    setToast("Submitting…");
 
     try {
       const res = await fetch(POWER_AUTOMATE_POST_URL, {
@@ -494,12 +483,11 @@
       }
 
       markSubmitted();
-      setToast("Submitted successfully. You can’t submit again this week from this browser.", "good");
+      setToast("Only one submission is allowed per week.", "good");
     } catch (e) {
       btnSubmit.disabled = false;
       setToast(
-        `Submit failed: <strong>${escapeHtml(e.message)}</strong><br/>
-         If you see a CORS error in DevTools, add CORS headers in the Power Automate Response action.`,
+        `Submit failed: <strong>${escapeHtml(e.message)}</strong>`,
         "bad"
       );
     }
@@ -535,10 +523,11 @@
     renderQuestion();
   });
 
-  // Init
+  // If already submitted this week, keep the same messaging (no technical wording)
   if (hasSubmitted()) {
-    setToast("Note: you have already submitted this week from this browser. You may still take the quiz, but cannot submit again.");
+    setToast("You have already submitted the quiz this week.", "bad");
   }
+
   updateStats();
 })();
 </script>
