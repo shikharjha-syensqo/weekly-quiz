@@ -298,13 +298,13 @@
     }[m]));
   }
 
-  function isSyensqoEmail(email) {
+  function isAllowedEmail(email) {
     const e = String(email || "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
     return e.endsWith("@" + ALLOWED_DOMAIN);
   }
 
-  // "One submission per week" (tracked locally)
+  // One submission per week (tracked locally)
   function submissionKeyForThisWeek() {
     return `weeklyQuizSubmitted_${getISOWeekId(new Date())}`;
   }
@@ -486,31 +486,21 @@
       setToast("Only one submission is allowed per week.", "good");
     } catch (e) {
       btnSubmit.disabled = false;
-      setToast(
-        `Submit failed: <strong>${escapeHtml(e.message)}</strong>`,
-        "bad"
-      );
+      setToast(`Submit failed: <strong>${escapeHtml(e.message)}</strong>`, "bad");
     }
   }
 
   btnSubmit.addEventListener("click", submitResult);
 
-  // Modal logic (mandatory)
+  // Mandatory modal
   modalForm.addEventListener("submit", (e) => {
     e.preventDefault();
-
     const name = modalName.value.trim();
     const email = modalEmail.value.trim().toLowerCase();
 
-    if (!name) {
-      modalError.textContent = "Please enter your name.";
-      return;
-    }
-    if (!email) {
-      modalError.textContent = "Please enter your email.";
-      return;
-    }
-    if (!isSyensqoEmail(email)) {
+    if (!name) { modalError.textContent = "Please enter your name."; return; }
+    if (!email) { modalError.textContent = "Please enter your email."; return; }
+    if (!isAllowedEmail(email)) {
       modalError.textContent = `Email must be a valid address ending with @${ALLOWED_DOMAIN}.`;
       return;
     }
@@ -523,7 +513,6 @@
     renderQuestion();
   });
 
-  // If already submitted this week, keep the same messaging (no technical wording)
   if (hasSubmitted()) {
     setToast("You have already submitted the quiz this week.", "bad");
   }
