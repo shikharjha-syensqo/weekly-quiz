@@ -79,7 +79,7 @@
       transition: width .2s ease;
     }
 
-    .q-title{ margin:0 0 6px; font-size:20px; line-height:1.25; text-align:center; }
+    .q-title{ margin:0 0 6px; font-size:20px; line-height:1.25; text-align:center; white-space:pre-line; }
     .q-help{ margin:0 0 14px; color:var(--muted); font-size:13.5px; text-align:center; }
     .answers{ display:flex; flex-direction:column; gap:12px; }
 
@@ -250,13 +250,10 @@
 
   const ALLOWED_DOMAIN = "syensqo.com";
 
+  // UPDATED QUESTIONS (as provided)
   const QUIZ = [
     {
-      text: You send:
-
-“Gentle Reminder”
-
-What does it ACTUALLY mean?",
+      text: "You send:\n“Gentle Reminder”\nWhat does it ACTUALLY mean?",
       options: [
         "No pressure",
         "Please respond soon",
@@ -266,27 +263,22 @@ What does it ACTUALLY mean?",
       correctIndex: 2
     },
     {
-      text: "What is the REAL meaning of:
-
-“Let’s circle back later”",
-      options: ["Important discussion pending", "Need more data", "We forgot the solution", "This conversation is ending now"],
+      text: "What is the REAL meaning of:\n“Let’s circle back later”",
+      options: [
+        "Important discussion pending",
+        "Need more data",
+        "We forgot the solution",
+        "This conversation is ending now"
+      ],
       correctIndex: 3
     },
     {
-      text: "Which number comes next?
-
-2 → 6 → 12 → 20 → ?",
+      text: "Which number comes next?\n2 → 6 → 12 → 20 → ?",
       options: ["28", "30", "32", "42"],
       correctIndex: 1
     },
     {
-      text: "You have:
-
-1 match
-1 candle
-1 lamp
-
-What do you light first?",
+      text: "You have:\n1 match\n1 candle\n1 lamp\nWhat do you light first?",
       options: ["Candle", "Lamp", "Match", "Switch"],
       correctIndex: 2
     },
